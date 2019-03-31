@@ -1,30 +1,37 @@
 package com.keiraindustries.myjournal.Model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
- * Created by tom on 1/4/19.
+ * Created by keira on 1/4/19.
  */
 
-public class Blog {
+public class Blog{
     private long entryDate;
+    private long lastModDate;
     private String entryText;
     private String title;
-    private String ID;
     private String hashtags;
 
     public ArrayList<String> tags;
     public ArrayList<String> pictures;
 
     public Blog() {
+        entryDate = 0L;
+        lastModDate = 0L;
+        entryText = "";
+        title = "";
+        hashtags = "";
         tags = new ArrayList<>();
 
         pictures = new ArrayList<>();
     }
     @SuppressWarnings("unchecked")
-    public Blog(long entryDate, String entryText, String title, ArrayList<String> tags, ArrayList<String> pictures, String hashtags) {
+    public Blog(long entryDate, long lastModDate, String entryText, String title, ArrayList<String> tags, ArrayList<String> pictures, String hashtags) {
         this();
         this.entryDate = entryDate;
+        this.lastModDate = lastModDate;
         this.entryText = entryText;
         this.title = title;
         if (tags != null) {this.tags = (ArrayList<String>) tags.clone();}
@@ -56,19 +63,19 @@ public class Blog {
         this.title = title;
     }
 
-    public String getID() {
-        return ID;
-    }
-
-    public void setID(String ID) {
-        this.ID = ID;
-    }
-
     public String getHashtags() {
         return hashtags;
     }
 
     public void setHashtags(String hashtags) {
         this.hashtags = hashtags;
+    }
+
+    public long getLastModDate() {
+        return lastModDate;
+    }
+
+    public void setLastModDate(long lastModDate) {
+        this.lastModDate = lastModDate;
     }
 }

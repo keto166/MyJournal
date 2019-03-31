@@ -23,6 +23,7 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
 
 
     private int blogPos;
+    private long modifyDate;
     private Blog blog;
     private EditText title;
     private EditText entry;
@@ -31,6 +32,8 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
     private DatePickerDialog startTime;
     private AlertDialog.Builder dialogBuilder;
     private AlertDialog dialog;
+    private boolean isDateModified;
+    private boolean isEntryModified;
 
     //TODO implement double tap edit
 
@@ -48,6 +51,7 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
         blogPos = getIntent().getExtras().getInt(JournalData.BLOGIDNUM);
         if (blogPos == -1) {
             blog = new Blog();
+            modifyDate = System.currentTimeMillis();
         } else {
             blog = JournalData.getInstance().getBlogList().get(blogPos);
         }
@@ -100,12 +104,24 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
         //TODO Save blog changes
         blog.setEntryText(entry.getText().toString());
         blog.setTitle(title.getText().toString());
+        if (isDateModified) {
+
+        } else {
+            if (blog.getEntryDate() == 0) {
+                blog.setEntryDate(modifyDate);
+            } else {
+                blog.setLastModDate(modifyDate);
+            }
+        }
+        /*
         try {
             Date d = JournalData.getInstance().getDateFormat().parse("15134510");
-            blog.setEntryDate(d.getTime());
+            long temp = d.getTime();
+            blog.setEntryDate(temp);
         } catch (ParseException e) {
             e.printStackTrace();
         }
+        */
         JournalData.getInstance().saveBlog(blog);
     }
 

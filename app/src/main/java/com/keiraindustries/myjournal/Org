@@ -1,0 +1,33 @@
+Sync entries task:
+        -download any new entries
+            -if storage manifest exists on firebase
+                -then yes download and load to reference
+                -then no create local storage manifest and load to reference
+            -if device manifest reference == null then
+                -see if device manifest file exists.
+                    -then yes, load and update reference
+                    -then no, create new empty device manifest and load reference to it.
+            -compare storage to device manifests for new storage entries
+            -download changed storage entries to local
+            -update changes in device manifest, save device manifest to local file
+        -upload any new/changed entries from storage
+            -compare storage to device manifests for new device entries
+            -upload changed entries from device
+            -update storage manifest, save to local file
+            -upload storage manifest
+
+(future optional overwrite check)-check if any changed entries have a different last modified date
+
+To delete an entry:
+    -delete device file
+    -remove from device manifest's entry map
+    -remove from storage manifest's entry map
+    -delete from storage
+
+TODO
+    -DONE initialize bloglist
+    -DONE re-link to blog list activity
+    -DONE update blog saving and device-manifest relationship
+    -DONE add sync button to blog list to manually try to sync to storage
+    -DONE Sync thread safe, so that it can update the bloglist when all the blogs are done
+    -DONE blog entries and manifests JSONs so they are easily transferrable to other systems
