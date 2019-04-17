@@ -2,6 +2,8 @@ package com.keiraindustries.myjournal.Model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 /**
  * Created by keira on 1/4/19.
@@ -12,23 +14,24 @@ public class Blog{
     private long lastModDate;
     private String entryText;
     private String title;
-    private String hashtags;
+    public ArrayList<String> hashtags;
 
     public ArrayList<String> tags;
     public ArrayList<String> pictures;
 
     public Blog() {
-        entryDate = 0L;
-        lastModDate = 0L;
+        GregorianCalendar date = new GregorianCalendar();
+        entryDate = date.getTimeInMillis();
+        lastModDate = date.getTimeInMillis();
         entryText = "";
         title = "";
-        hashtags = "";
+        hashtags = new ArrayList<>();
         tags = new ArrayList<>();
 
         pictures = new ArrayList<>();
     }
     @SuppressWarnings("unchecked")
-    public Blog(long entryDate, long lastModDate, String entryText, String title, ArrayList<String> tags, ArrayList<String> pictures, String hashtags) {
+    public Blog(long entryDate, long lastModDate, String entryText, String title, ArrayList<String> tags, ArrayList<String> pictures, ArrayList<String> hashtags) {
         this();
         this.entryDate = entryDate;
         this.lastModDate = lastModDate;
@@ -63,12 +66,8 @@ public class Blog{
         this.title = title;
     }
 
-    public String getHashtags() {
+    public ArrayList<String> getHashtags() {
         return hashtags;
-    }
-
-    public void setHashtags(String hashtags) {
-        this.hashtags = hashtags;
     }
 
     public long getLastModDate() {

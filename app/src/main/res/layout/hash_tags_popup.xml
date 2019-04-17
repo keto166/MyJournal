@@ -14,22 +14,30 @@
             android:layout_height="wrap_content"
             android:padding="16sp">
 
-            <TextView
-                android:id="@+id/tv_ht_list"
-                android:text="#Test"
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/rvHashTagList"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textSize="20sp"
-                android:padding="4sp"/>
+                android:padding="8sp"
+                />
 
             <EditText
                 android:id="@+id/et_ht_new"
                 android:hint="#"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/tv_ht_list"
+                android:layout_below="@id/rvHashTagList"
+                android:layout_toLeftOf="@id/b_add_ht"
                 android:padding="8sp"/>
+
+            <Button
+                android:id="@+id/b_add_ht"
+                android:layout_width="50dp"
+                android:layout_height="45dp"
+                android:layout_alignTop="@id/et_ht_new"
+                android:layout_alignEnd="@id/rvHashTagList"
+                android:padding="8sp"
+                android:text="Add" />
 
         </RelativeLayout>
 

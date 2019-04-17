@@ -31,3 +31,9 @@ TODO
     -DONE add sync button to blog list to manually try to sync to storage
     -DONE Sync thread safe, so that it can update the bloglist when all the blogs are done
     -DONE blog entries and manifests JSONs so they are easily transferrable to other systems
+
+    SWITCHING TO FTP Based system
+    -DONE Test downloading protocol
+    -DONE Test Uploading protocol
+    -DONE Test file checking protocol
+    -DONE Test Uploading/Replacing protocol

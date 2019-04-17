@@ -1,26 +1,34 @@
 package com.keiraindustries.myjournal.Activities;
 
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.Color;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.keiraindustries.myjournal.Data.JournalData;
 import com.keiraindustries.myjournal.Model.Blog;
 import com.keiraindustries.myjournal.R;
 
-import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.List;
 
 public class BlogPostView extends AppCompatActivity implements DatePickerDialog.OnDateSetListener {
-
 
     private int blogPos;
     private long modifyDate;
@@ -58,18 +66,14 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
         title.setText(blog.getTitle());
         entry.setText(blog.getEntryText());
         date.setText(JournalData.getInstance().getDateFormat().format(new Date(blog.getEntryDate())));
-        hashTagView.setText(blog.getHashtags());
 
-        startTime = new DatePickerDialog(this, BlogPostView.this, Calendar.getInstance().get(Calendar.YEAR),
-                Calendar.getInstance().get(Calendar.MONTH),
-                Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
-//        startTime = new DatePickerDialog(getApplicationContext(), new DatePickerDialog.OnDateSetListener() {
-//            public void onDateSet(DatePicker view, int year, int monthOfYear, int dayOfMonth) {
-//                        Calendar newDate = Calendar.getInstance();
-//                        newDate.set(year, monthOfYear, dayOfMonth);
-//            }
-//
-//        }, Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(Calendar.MONTH), Calendar.getInstance().get(Calendar.DAY_OF_MONTH));
+        Calendar myCal = Calendar.getInstance();
+
+        startTime = new DatePickerDialog(this, BlogPostView.this,
+                myCal.get(Calendar.YEAR),
+                myCal.get(Calendar.MONTH),
+                myCal.get(Calendar.DAY_OF_MONTH));
+
         date.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -88,14 +92,9 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
         hashTagView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addHashTags();
+                addHashTags(v.getRootView());
             }
         });
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
     }
 
     @Override
@@ -113,43 +112,48 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
                 blog.setLastModDate(modifyDate);
             }
         }
-        /*
-        try {
-            Date d = JournalData.getInstance().getDateFormat().parse("15134510");
-            long temp = d.getTime();
-            blog.setEntryDate(temp);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        */
         JournalData.getInstance().saveBlog(blog);
     }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-    }
 
-    public void addHashTags() {
+    public void addHashTags(final View parentView) {
         dialogBuilder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.hash_tags_popup, null);
-
-
-
         dialogBuilder.setView(view);
         dialog = dialogBuilder.create();
         dialog.show();
 
-        final EditText newHashTag = (EditText) view.findViewById(R.id.et_ht_new);
+        RecyclerView rvHashTags = view.findViewById(R.id.rvHashTagList);
+        rvHashTags.setHasFixedSize(true);
+        rvHashTags.setLayoutManager(new LinearLayoutManager(parentView.getContext()));
 
-        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+        Button buttonAddHt = view.findViewById(R.id.b_add_ht);
+        final EditText etNewHt = view.findViewById(R.id.et_ht_new);
+
+        HTListRVAdapter htListRVAdapter = new HTListRVAdapter(blog.getHashtags());
+        rvHashTags.setAdapter(htListRVAdapter);
+
+        buttonAddHt.setOnClickListener(new View.OnClickListener() {
+            public HTListRVAdapter adapter;
             @Override
-            public void onDismiss(DialogInterface dialog) {
-                blog.setHashtags(newHashTag.getText().toString());
-                hashTagView.setText(blog.getHashtags());
-            }
-        });
+            public void onClick(View v) {
+                //Add contents to htlist
+                if (!etNewHt.getText().toString().equals("")) {
+                    if (!blog.getHashtags().contains(etNewHt.getText().toString())) {
+                        blog.getHashtags().add(etNewHt.getText().toString());
 
+                    }
+                    etNewHt.setText("");
+                    adapter.notifyDataSetChanged();
+                }
+
+            }
+
+            public View.OnClickListener init(HTListRVAdapter adapter) {
+                this.adapter = adapter;
+                return this;
+            }
+        }.init(htListRVAdapter));
 
     }
 
@@ -188,11 +192,67 @@ public class BlogPostView extends AppCompatActivity implements DatePickerDialog.
 
     @Override
     public void onDateSet(DatePicker view, int year, int month, int dayOfMonth) {
-        Date d = new Date(year-1900,month, dayOfMonth);
-        d.getTime();
-        blog.setEntryDate(d.getTime());
-        date.setText(JournalData.getInstance().getDateFormat().format(new Date(blog.getEntryDate())));
+        GregorianCalendar pickedDay = new GregorianCalendar(year,month, dayOfMonth,
+                (int)Math.random()*24,(int)Math.random()*60,(int)Math.random()*60);
+        blog.setEntryDate(pickedDay.getTimeInMillis());
+        date.setText(JournalData.getInstance().getDateFormat().format(pickedDay.getTimeInMillis()));
 
     }
+
+    public class HTListRVAdapter extends RecyclerView.Adapter<BlogPostView.HTListRVAdapter.MyViewHolder> {
+
+        private List<String> itemList;
+
+        public HTListRVAdapter(List itemList) {
+            this.itemList = itemList;
+
+        }
+
+        @Override
+        public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.hash_tag_row, parent, false);
+            return new MyViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(final MyViewHolder holder, int position) {
+            holder.tvHashTag.setText(itemList.get(position));
+            //holder.tvHashTag.setText(position);
+            holder.bDelete.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    itemList.remove(holder.getAdapterPosition());
+                    notifyDataSetChanged();
+                }
+            });
+
+        }
+
+
+
+        @Override
+        public int getItemCount() {
+            return itemList.size();
+        }
+
+        public class MyViewHolder extends RecyclerView.ViewHolder{
+
+            public TextView tvHashTag;
+            public ImageButton bDelete;
+
+            public MyViewHolder(View itemView) {
+                super(itemView);
+
+                tvHashTag = itemView.findViewById(R.id.tvHashTagValue);
+                bDelete = itemView.findViewById(R.id.b_delete_hash_tag);
+
+            }
+
+        }
+
+
+    }
+
 
 }

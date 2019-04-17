@@ -15,12 +15,9 @@ import android.view.View;
 import android.widget.Toast;
 
 import com.keiraindustries.myjournal.Activities.Adapters.BlogEntryListRVAdapter;
-import com.keiraindustries.myjournal.Model.Blog;
 import com.keiraindustries.myjournal.Data.JournalData;
 import com.keiraindustries.myjournal.R;
 
-import java.util.ArrayList;
-import java.util.List;
 
 public class BlogEntryListActivity extends AppCompatActivity {
 
@@ -32,8 +29,8 @@ public class BlogEntryListActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_blog_entry_list);
 
-        JournalData.getInstance().setActiveActivity(this);
-        JournalData.getInstance().initialize();
+        JournalData.getInstance().setBLA(this);
+
 
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -68,7 +65,7 @@ public class BlogEntryListActivity extends AppCompatActivity {
                 startActivity(intent);
                 return true;
             case R.id.action_sync:
-                JournalData.getInstance().syncWithStorage();
+                JournalData.getInstance().syncWithStorage(getApplicationContext());
                 return true;
             default:
         }
@@ -86,23 +83,23 @@ public class BlogEntryListActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        JournalData.getInstance().setActiveActivity(this);
-        JournalData.getInstance().initialize();
+        //TODO Fix this
+        JournalData.getInstance().setBLA(this);
         blogEntryListRVAdapter.notifyDataSetChanged();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        JournalData.getInstance().setActiveActivity(null);
+        JournalData.getInstance().setBLA(null);
     }
-
 
     public void update() {
         if (blogEntryListRVAdapter != null) {
             blogEntryListRVAdapter.notifyDataSetChanged();
         }
     }
+
     public void deletePopup(final BlogEntryListRVAdapter.MyViewHolder holder, final View v) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
 
@@ -152,6 +149,10 @@ public class BlogEntryListActivity extends AppCompatActivity {
 
         AlertDialog alert = builder.create();
         alert.show();
+    }
+
+    public void shout(String s) {
+        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
     }
 
 }

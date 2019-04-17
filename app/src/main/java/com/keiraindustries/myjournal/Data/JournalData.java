@@ -1,15 +1,9 @@
 package com.keiraindustries.myjournal.Data;
 
-import android.net.Uri;
-import android.support.annotation.NonNull;
+import android.content.Context;
+import android.content.Intent;
+import android.util.Log;
 import android.widget.Toast;
-
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.firebase.storage.FileDownloadTask;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.keiraindustries.myjournal.Activities.BlogEntryListActivity;
 import com.keiraindustries.myjournal.Model.Blog;
@@ -33,11 +27,13 @@ import java.util.TimeZone;
 
 
 public class JournalData {
-    private static final JournalData ourInstance = new JournalData();
+
+
+    private static JournalData ourInstance;
     public static final String BLOGIDNUM = "Blog ID Number";
     private List<Blog> blogList;
     public DateFormat dateFormat;
-    private BlogEntryListActivity activeActivity;
+    private BlogEntryListActivity bla;
     public JournalManifest deviceManifest;
     public JournalManifest storageManifest;
     public String appPath;                          //path to the working directory of the app
@@ -45,13 +41,13 @@ public class JournalData {
     private ArrayList<Long> toBeULed;
     public ArrayList<Blog> toBeDeleted;
     private Gson gson;
-
-//    private FirebaseDatabase database;
-//    private DatabaseReference databaseReference;
-    private StorageReference mStorageRef;
     private boolean initialized;
 
     public static JournalData getInstance() {
+        if (ourInstance == null) {
+            ourInstance = new JournalData();
+            ourInstance.initialize();
+        }
         return ourInstance;
     }
 
@@ -63,54 +59,9 @@ public class JournalData {
 
     public void initialize() {
         if (initialized) {return;}
+
         gson = new Gson();
         initialized = true;
-
-//        database = FirebaseDatabase.getInstance();
-//        databaseReference = database.getReference().child("MyJournal");
-//        databaseReference.keepSynced(true);
-//        databaseReference.addChildEventListener(new ChildEventListener() {
-//            @Override
-//            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-//
-//                Blog blog = dataSnapshot.getValue(Blog.class);
-//                blog.setID(dataSnapshot.getKey());
-//
-//                blogList.add(blog);
-//
-////                Collections.reverse(blogList);
-////
-////                blogRecyclerAdapter = new BlogRecyclerAdapter(PostListActivity.this,blogList);
-////                recyclerView.setAdapter(blogRecyclerAdapter);
-////                blogRecyclerAdapter.notifyDataSetChanged();
-//                if (activeActivity != null) {
-//                    //TODO fix this: activeActivity.update();
-//                }
-//
-//
-//
-//            }
-//
-//            @Override
-//            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-//
-//            }
-//
-//            @Override
-//            public void onChildRemoved(DataSnapshot dataSnapshot) {
-//
-//            }
-//
-//            @Override
-//            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-//
-//            }
-//
-//            @Override
-//            public void onCancelled(DatabaseError databaseError) {
-//
-//            }
-//        });
 
         dateFormat = SimpleDateFormat.getDateInstance();
         dateFormat.setTimeZone(TimeZone.getDefault());
@@ -121,6 +72,7 @@ public class JournalData {
         if (blogList == null) {blogList = new ArrayList<>();}
         if (storageManifest == null) {storageManifest = new JournalManifest();}
         if (deviceManifest == null) {deviceManifest = new JournalManifest();}
+        String temp = getDevManifestPath();
         File devManifestFile = new File(getDevManifestPath());
         if (devManifestFile.exists()) {
             loadManifest(deviceManifest, getDevManifestPath());
@@ -169,20 +121,6 @@ public class JournalData {
         if (!blogList.contains(blog)) { blogList.add(blog);}
         saveManifest(deviceManifest,getDevManifestPath());
 
-
-//OLD        DatabaseReference savePost;
-//        if (blog.getID() != null) {
-//            savePost = databaseReference.child(blog.getID());
-//        } else {
-//            savePost = databaseReference.push();
-//        }
-//        Map<String, String> dataToSave = new HashMap<>();
-//        dataToSave.put("title", blog.getTitle());
-//        dataToSave.put("desc", blog.getEntryText());
-//        dataToSave.put("timestamp", String.valueOf(blog.getEntryDate()));
-//        dataToSave.put("hashtags", blog.getHashtags());
-//
-//        savePost.setValue(dataToSave);
     }
 
     public DateFormat getDateFormat() {
@@ -194,28 +132,28 @@ public class JournalData {
         toBeDeleted.add(blog);
     }
 
-    public void setActiveActivity(BlogEntryListActivity activeActivity) {
-        this.activeActivity = activeActivity;
-        if (activeActivity != null) {
-            appPath = activeActivity.getFilesDir() + "/manifest";
-            File file = new File(appPath);
-            if (!file.exists()) {
-                if (!file.mkdir()) {
-                    //TODO report ERROR
-                }
+    public void setFilesDir(String filesDir) {
+        appPath = filesDir + "/manifest";
+        File file = new File(appPath);
+        if (!file.exists()) {
+            if (!file.mkdir()) {
+                //TODO report ERROR
             }
+
         }
     }
 
     public void saveManifest(JournalManifest manifest, String path) {
         try {
-            FileOutputStream fileOut =new FileOutputStream(path);
+            FileOutputStream fileOut = new FileOutputStream(path);
             ObjectOutputStream out = new ObjectOutputStream(fileOut);
             out.writeObject(manifest);
             out.close();
             fileOut.close();
-        } catch (IOException i) {
-            i.printStackTrace();
+            bla.shout("Manifest saved");
+        } catch (Exception e) {
+            Log.e("Error", e.getMessage() + "Saving Manifest");
+            Log.e("Error", path);
         }
     }
 
@@ -227,39 +165,21 @@ public class JournalData {
             manifest.copyManifest(tempManifest);
             in.close();
             fileIn.close();
-            Toast.makeText(activeActivity, "Manifest loaded", Toast.LENGTH_SHORT).show();
-        } catch (IOException i) {
-            i.printStackTrace();
-        } catch (ClassNotFoundException c) {
-            c.printStackTrace();
+            bla.shout("Manifest loaded");
+        } catch (Exception e) {
+            Log.e("Error", e.getMessage() + "Loading Manifest");
+            Log.e("Error", path);
         }
     }
 
-    public void syncWithStorage() {
-
-        //todo check storage manifest exists on firebase
+    public void syncWithStorage(Context context) {
 
         //getting storage manifest
         try {
-            mStorageRef = FirebaseStorage.getInstance().getReference().child("manifest");
-            Uri path = Uri.fromFile(new File(getStorManifestPath()));
-            mStorageRef.getFile(path)
-                    .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                        @Override
-                        public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                            loadManifest(storageManifest,getStorManifestPath());
-                            syncContinue();
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception exception) {
-                            // Handle unsuccessful uploads
-                            // ...
-                            storageManifest = new JournalManifest();
-                            syncContinue();
-                        }
-                    });
+            Intent i = new Intent(context, FileChecker.class);
+            i.putExtra(FileDownloader.KEY_FILE_NAME, "manifest");
+            i.putExtra(FileDownloader.KEY_FILE_TYPE, FileDownloader.VALUE_MANIFEST);
+            context.startService(i);
         } catch (Exception e) {
 
         }
@@ -268,7 +188,24 @@ public class JournalData {
 
     }
 
-    private void syncContinue() {
+    public void downloadStorageManifest(Context context) {
+        Intent i = new Intent(context, FileDownloader.class);
+        i.putExtra(FileDownloader.KEY_FILE_NAME, "manifest");
+        i.putExtra(FileDownloader.KEY_FILE_TYPE, FileDownloader.VALUE_MANIFEST);
+        context.startService(i);
+    }
+
+    public void loadStorageManifest(Context context) {
+        loadManifest(storageManifest,getStorManifestPath());
+        syncContinue(context);
+    }
+
+    public void newStorageManifest(Context context) {
+        storageManifest = new JournalManifest();
+        syncContinue(context);
+    }
+
+    private void syncContinue(Context context) {
 
         //loading or creating device manifest
         if (deviceManifest == null) {
@@ -304,58 +241,48 @@ public class JournalData {
         }
 
         //Deleting entries
+        //TODO update this section
 
         for (Blog blog : toBeDeleted) {
-            final Blog fblog = blog;
-            File file = new File(getNotesDirectory()+"/"+Long.valueOf(blog.getEntryDate()).toString());
-            file.delete();
-
-            if (deviceManifest.entryMap.containsKey(blog.getEntryDate()))
-                    {deviceManifest.entryMap.remove(blog.getEntryDate());}
-            if (storageManifest.entryMap.containsKey(blog.getEntryDate()))
-                {storageManifest.entryMap.remove(blog.getEntryDate());
-                    mStorageRef = FirebaseStorage.getInstance().getReference().child("Entries")
-                            .child(Long.valueOf(blog.getEntryDate()).toString());
-                    mStorageRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
-                        @Override
-                        public void onSuccess(Void aVoid) {
-
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(activeActivity, "delete failed", Toast.LENGTH_SHORT).show();
-                        }
-                    });}
-            if (toBeDLed.contains(blog.getEntryDate())) {toBeDLed.remove(blog.getEntryDate());}
-            if (toBeULed.contains(blog.getEntryDate())) {toBeULed.remove(blog.getEntryDate());}
-            removeFromBlogList(fblog);
+//            final Blog fblog = blog;
+//            File file = new File(getNotesDirectory()+"/"+Long.valueOf(blog.getEntryDate()).toString());
+//            file.delete();
+//
+//            if (deviceManifest.entryMap.containsKey(blog.getEntryDate()))
+//                    {deviceManifest.entryMap.remove(blog.getEntryDate());}
+//            if (storageManifest.entryMap.containsKey(blog.getEntryDate()))
+//                {storageManifest.entryMap.remove(blog.getEntryDate());
+//                    mStorageRef = FirebaseStorage.getInstance().getReference().child("Entries")
+//                            .child(Long.valueOf(blog.getEntryDate()).toString());
+//                    mStorageRef.delete().addOnSuccessListener(new OnSuccessListener<Void>() {
+//                        @Override
+//                        public void onSuccess(Void aVoid) {
+//
+//                        }
+//                    })
+//                    .addOnFailureListener(new OnFailureListener() {
+//                        @Override
+//                        public void onFailure(@NonNull Exception e) {
+//                            Toast.makeText(bla, "delete failed", Toast.LENGTH_SHORT).show();
+//                        }
+//                    });}
+//            if (toBeDLed.contains(blog.getEntryDate())) {toBeDLed.remove(blog.getEntryDate());}
+//            if (toBeULed.contains(blog.getEntryDate())) {toBeULed.remove(blog.getEntryDate());}
+//            removeFromBlogList(fblog);
 
 
 
         }
         toBeDeleted.clear();
 
-        //Downloading
+        //Downloading blog entries
 
         for (Long l : toBeDLed) {
             try {
-                final Long fl = l;
-                mStorageRef = FirebaseStorage.getInstance().getReference().child("Entries").child(l.toString());
-                Uri path = Uri.fromFile(new File(getNotesDirectory()+"/"+l.toString()));
-                mStorageRef.getFile(path)
-                        .addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                addToBlogList(fl);
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception exception) {
-                            }
-                        });
+                Intent i = new Intent(context, FileDownloader.class);
+                i.putExtra(FileDownloader.KEY_FILE_NAME, l.toString());
+                i.putExtra(FileDownloader.KEY_FILE_TYPE, FileDownloader.VALUE_NOTE);
+                context.startService(i);
 
             } catch (Exception e) {
 
@@ -367,24 +294,10 @@ public class JournalData {
         //Uploading
         for (Long l : toBeULed) {
             try {
-                mStorageRef = FirebaseStorage.getInstance().getReference().child("Entries").child(l.toString());
-                Uri path = Uri.fromFile(new File(getNotesDirectory()+"/" +l.toString()));
-                mStorageRef.putFile(path)
-                        .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                            @Override
-                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                                // Get a URL to the uploaded content
-                                Toast.makeText(activeActivity, "done", Toast.LENGTH_SHORT).show();
-                            }
-                        })
-                        .addOnFailureListener(new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception exception) {
-                                // Handle unsuccessful uploads
-                                // ...
-                                Toast.makeText(activeActivity, "UL failed", Toast.LENGTH_SHORT).show();
-                            }
-                        });
+                Intent i = new Intent(context, FileUploader.class);
+                i.putExtra(FileDownloader.KEY_FILE_NAME, l.toString());
+                i.putExtra(FileDownloader.KEY_FILE_TYPE, FileDownloader.VALUE_NOTE);
+                context.startService(i);
                 storageManifest.entryMap.put(l,deviceManifest.entryMap.get(l));
             } catch (Exception e) {
 
@@ -396,32 +309,28 @@ public class JournalData {
         try {
             saveManifest(storageManifest,getStorManifestPath());
 
-            mStorageRef = FirebaseStorage.getInstance().getReference().child("manifest");
-            Uri path = Uri.fromFile(new File(getStorManifestPath()));
-            mStorageRef.putFile(path);
+            Intent i = new Intent(context, FileUploader.class);
+            i.putExtra(FileDownloader.KEY_FILE_NAME, "manifest");
+            i.putExtra(FileDownloader.KEY_FILE_TYPE, FileDownloader.VALUE_MANIFEST);
+            context.startService(i);
         } catch (Exception e) {
 
         }
-
-
-        //Update caller
-        //TODO activeActivity.update();
-
     }
 
-    private synchronized void addToBlogList(Long l) {
+    protected synchronized void addToBlogList(Long l) {
         deviceManifest.entryMap.put(l,storageManifest.entryMap.get(l));
         blogList.add(loadBlog(getNotesDirectory()+"/"+l.toString()));
-        if (activeActivity != null) {
-            activeActivity.update();
+        if (bla != null) {
+            bla.update();
         }
     }
 
     private synchronized void removeFromBlogList(Blog blog) {
 
         if (blogList.contains(blog)) {blogList.remove(blog);}
-        if (activeActivity != null) {
-            activeActivity.update();
+        if (bla != null) {
+            bla.update();
         }
     }
 
@@ -454,4 +363,10 @@ public class JournalData {
         String temp = getManifestDirectory()+"/storage_manifest.ser";
         return temp;
     }
+
+
+    public void setBLA(BlogEntryListActivity bla) {
+        this.bla = bla;
+    }
+
 }

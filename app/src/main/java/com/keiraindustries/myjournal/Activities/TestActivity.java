@@ -22,7 +22,7 @@ public class TestActivity extends AppCompatActivity {
         testButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                JournalData.getInstance().syncWithStorage();
+                JournalData.getInstance().syncWithStorage(getApplicationContext());
             }
         });
         JournalData.getInstance().initialize();

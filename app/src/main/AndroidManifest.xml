@@ -19,6 +19,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <service
+            android:name=".Data.FileDownloader"
+            android:exported="false" />
+        <service
+            android:name=".Data.FileChecker"
+            android:exported="false" />
+        <service
+            android:name=".Data.FileUploader"
+            android:exported="false" />
         <activity android:name=".Activities.BlogPostView" />
         <activity android:name=".Activities.BlogEntryListActivity" />
         <activity android:name=".Activities.TestActivity"></activity>
